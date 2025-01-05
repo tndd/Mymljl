@@ -3,11 +3,12 @@
 using MCMCChains
 using Random
 using Turing
+using Distributions
 
 Random.seed!(1234)
 
 p_true = 0.5
-N = 100
+N = 1000
 
 # data = rand(Bernoulli(p_true), N)
 
@@ -16,17 +17,15 @@ N = 100
     y ~ filldist(Bernoulli(p), N)
 end
 
-model = coinflip(N=1000)
+coinflip(y::AbstractVector{<:Real}) = coinflip(; N=length(y)) | (; y);
+
+model = coinflip(data)
+
 sampler_mcmc = NUTS()
 
-chain = sample(model, sampler_mcmc, 100)
+chain = sample(model, sampler_mcmc, 1_000; progress=false)
 
-# coinflip(y::AbstractVector{<:Real}) = coinflip(; N=length(y)) | (; y);
-
-# model = coinflip(data);
-
-# sampler = HMC(0.05, 10);
-
-# chain = sample(model, sampler, 1_000; progress=false);
-
-# histogram(chain)
+histogram(
+    chain,
+    bin=30
+)
