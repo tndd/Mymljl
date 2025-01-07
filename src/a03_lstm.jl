@@ -65,29 +65,25 @@ function forward(lstm::LSTM, x_t::Vector{Float64}, h_prev::Vector{Float64}, c_pr
     return h_t, c_t
 end
 
-# 使用例
-function example()
-    # 設定
-    input_size = 10
-    hidden_size = 16
 
-    # LSTMの初期化
-    lstm = create_lstm(input_size, hidden_size)
 
-    # 初期状態
-    h = zeros(hidden_size)
-    c = zeros(hidden_size)
+# 設定
+input_size = 10
+hidden_size = 16
 
-    # サンプル入力
-    x = randn(input_size)
+# LSTMの初期化
+lstm = create_lstm(input_size, hidden_size)
 
-    # 1ステップ実行
-    h_new, c_new = forward(lstm, x, h, c)
+# 初期状態
+h = zeros(hidden_size)
+c = zeros(hidden_size)
 
-    println("入力サイズ: ", length(x))
-    println("隠れ状態サイズ: ", length(h_new))
-    println("セル状態サイズ: ", length(c_new))
-end
+# サンプル入力
+x = randn(input_size)
 
-# 実行
-example()
+# 1ステップ実行
+h_new, c_new = forward(lstm, x, h, c)
+
+println("入力サイズ: ", length(x))
+println("隠れ状態サイズ: ", length(h_new))
+println("セル状態サイズ: ", length(c_new))
