@@ -18,8 +18,11 @@ mixturemodel = MixtureModel(
 )
 
 # We draw the data points.
-N = 600
+N = 60
 x = rand(mixturemodel, N);
+
+scatter(x[1, :], x[2, :]; legend=false, title="Synthetic Dataset")
+
 
 @model function gaussian_mixture_model(x)
     # Draw the parameters for each of the K=2 clusters from a standard normal distribution.
@@ -48,6 +51,18 @@ x = rand(mixturemodel, N);
     return k
 end
 
-size(x)
-display(x)
-# model = gaussian_mixture_model(x);
+model = gaussian_mixture_model(x);
+
+# サンプラーの設定を変更
+sampler = Gibbs(
+    PG(10, :k),  # 粒子数を減らす
+    HMC(0.05, 10, :μ, :w)  # ステップサイズとステップ数を調整
+)
+
+# サンプリングの実行
+nsamples = 100
+nchains = 4
+burn = 20
+chains = sample(model, sampler, MCMCSerial(), nsamples, nchains, discard_initial=burn)
+
+plot(chains[["μ[1]", "μ[2]"]]; legend=true)
