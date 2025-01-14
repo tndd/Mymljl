@@ -3,6 +3,7 @@ using FillArrays
 using LinearAlgebra
 using Random
 using StatsPlots
+using Turing
 
 # Set a random seed.
 Random.seed!(3)
@@ -20,4 +21,15 @@ mixturemodel = MixtureModel(
 N = 600
 x = rand(mixturemodel, N);
 
-scatter(x[1, :], x[2, :]; legend=false, title="Synthetic Dataset")
+@model function gaussian_mixture_model(x)
+    K = 2
+    μ ~ MvNormal(Zeros(K), I)
+    w ~ Dirichlet(K, 1.0)
+    dist_asigned = Categorical(w)
+
+    D, N = size(x)
+    dist_clusters = [
+        MvNormal(Fill(μₖ, D), I)
+        for μₖ in μ
+    ]
+end
