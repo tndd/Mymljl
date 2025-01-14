@@ -19,7 +19,7 @@ end
 
 @gif for n in 1:N
     plot(
-        updated_belief(prior_belief, data[1:n]);
+        updated_belief(prior_belief, data[1:n]),
         size=(500, 250),
         title="Updated belief after $n observations",
         xlabel="probability of heads",
