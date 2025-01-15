@@ -1,7 +1,7 @@
 module sub_a
     module sub_a1
         # 絶対パス形式での指定には、頭にMainが必要
-        using Main.MainModule.sub_b
+        using Main.MainModule.sub_b: f_sub_b
         function f_sub_a1()
             return 10 + f_sub_b()
         end
