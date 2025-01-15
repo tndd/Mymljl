@@ -6,9 +6,9 @@ module MainModule
     end
     module sub_a
         module sub_a1
-            using ...sub_b
+            using Main.MainModule.sub_b: f_sub_b
             function f_sub_a1()
-                return 10 + sub_b.f_sub_b()
+                return 10 + f_sub_b()
             end
         end
         module sub_a2
