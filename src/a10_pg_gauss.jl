@@ -2,6 +2,7 @@ using Distributions
 using Plots
 using Random
 using Statistics
+using StatsPlots
 
 # データ生成のパラメータ
 K = 3      # クラスタ数
@@ -29,7 +30,6 @@ function particle_gibbs(x, K, N, M, n_iterations)
     
     # 粒子の初期化
     particles = zeros(Int, N, M)    # N時点 × M個の粒子
-    ancestors = zeros(Int, N, M)    # 各粒子の祖先インデックス
     weights = zeros(M)              # 各粒子の重み
     z_samples = zeros(Int, n_iterations, N)
     μ_samples = zeros(n_iterations, K)
@@ -114,13 +114,23 @@ end
 z_samples, μ_samples, σ_samples = particle_gibbs(x, K, N, M, n_iterations)
 
 # 結果の可視化
-# 1. データとクラスタ割り当ての散布図
-p1 = scatter(x, zeros(N), color=z_true, label="True clusters", 
-             xlabel="x", ylabel="", title="Data and Clustering Results",
-             alpha=0.6, markersize=6)
-z_final = vec(mean(z_samples[burn_in+1:end, :], dims=1))
-scatter!(x, 0.1 .* ones(N), color=round.(Int, z_final), 
-        label="Estimated clusters", alpha=0.6, markersize=6)
+# 1. データとクラスタ割り当ての可視化
+p1 = plot(title="Data and Clustering Results", xlabel="x", ylabel="Density")
+
+# 真のクラスタの分布
+for k in 1:K
+    cluster_points = x[z_true .== k]
+    histogram!(p1, cluster_points, bins=30, alpha=0.3, 
+              label="True cluster $k", normalize=:pdf)
+end
+
+# 推定クラスタの分布
+z_final = round.(Int, vec(mean(z_samples[burn_in+1:end, :], dims=1)))
+for k in 1:K
+    cluster_points = x[z_final .== k]
+    density!(p1, cluster_points, 
+            label="Estimated cluster $k", linestyle=:dash)
+end
 
 # 2. μ の事後分布の推移
 p2 = plot(μ_samples, label=["μ1" "μ2" "μ3"], 
