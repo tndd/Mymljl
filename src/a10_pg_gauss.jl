@@ -114,33 +114,52 @@ end
 z_samples, μ_samples, σ_samples = particle_gibbs(x, K, N, M, n_iterations)
 
 # 結果の可視化
-# 1. データとクラスタ割り当ての可視化
+# 共通の色を定義
+colors = [:skyblue, :salmon, :lightgreen]
+
+# データとクラスタ割り当ての可視化
 p1 = plot(title="Data and Clustering Results", xlabel="x", ylabel="Density")
 
 # 真のクラスタの分布
 for k in 1:K
     cluster_points = x[z_true .== k]
     histogram!(p1, cluster_points, bins=30, alpha=0.3, 
-              label="True cluster $k", normalize=:pdf)
+               color=colors[k], fillalpha=0.3,
+               label="True cluster $k", normalize=:pdf)
 end
 
-# 推定クラスタの分布
+# クラスタのラベルを並び替える
+μ_final = vec(mean(μ_samples[burn_in+1:end, :], dims=1))
+perm = sortperm(μ_final)  # μの値でソート
 z_final = round.(Int, vec(mean(z_samples[burn_in+1:end, :], dims=1)))
-for k in 1:K
-    cluster_points = x[z_final .== k]
-    density!(p1, cluster_points, 
-            label="Estimated cluster $k", linestyle=:dash)
+
+# ラベルの付け直し
+z_reordered = zeros(Int, N)
+for i in 1:N
+    z_reordered[i] = findfirst(perm .== z_final[i])
 end
 
-# 2. μ の事後分布の推移
-p2 = plot(μ_samples, label=["μ1" "μ2" "μ3"], 
-          title="Trace of μ", xlabel="Iteration", ylabel="Value")
-hline!(true_μ, label=["True μ1" "True μ2" "True μ3"], linestyle=:dash)
+# 可視化（z_finalの代わりにz_reorderedを使用）
+for k in 1:K
+    cluster_points = x[z_reordered .== k]
+    density!(p1, cluster_points, 
+            color=colors[k], linestyle=:dash,
+            label="Estimated cluster $k")
+end
 
-# 3. σ の事後分布の推移
-p3 = plot(σ_samples, label=["σ1" "σ2" "σ3"], 
+# μ の事後分布の推移
+p2 = plot(μ_samples, color=permutedims(colors), 
+          label=["μ1" "μ2" "μ3"], 
+          title="Trace of μ", xlabel="Iteration", ylabel="Value")
+hline!(true_μ, color=permutedims(colors), 
+       label=["True μ1" "True μ2" "True μ3"], linestyle=:dash)
+
+# σ の事後分布の推移
+p3 = plot(σ_samples, color=permutedims(colors), 
+          label=["σ1" "σ2" "σ3"], 
           title="Trace of σ", xlabel="Iteration", ylabel="Value")
-hline!(true_σ, label=["True σ1" "True σ2" "True σ3"], linestyle=:dash)
+hline!(true_σ, color=permutedims(colors), 
+       label=["True σ1" "True σ2" "True σ3"], linestyle=:dash)
 
 # 全てのプロットを組み合わせて表示
 plot(p1, p2, p3, layout=(3,1), size=(800,1000))
