@@ -28,7 +28,8 @@ function particle_gibbs(x, K, N, M, n_iterations)
     σ = fill(1.0, K)  # より安定した初期値
     
     # 粒子の初期化
-    particles = zeros(Int, M, N)    # M個の粒子それぞれにN個のクラスタ割り当て
+    particles = zeros(Int, N, M)    # N時点 × M個の粒子
+    ancestors = zeros(Int, N, M)    # 各粒子の祖先インデックス
     weights = zeros(M)              # 各粒子の重み
     z_samples = zeros(Int, n_iterations, N)
     μ_samples = zeros(n_iterations, K)
@@ -64,11 +65,19 @@ function particle_gibbs(x, K, N, M, n_iterations)
 
         # 粒子フィルタによる z のサンプリング
         for t in 1:N
-            # 各粒子について
+            # 先祖のサンプリング（リサンプリング）
+            if t > 1
+                ancestor_indices = rand(Categorical(weights), M)
+                for m in 1:M
+                    particles[1:t-1, m] = particles[1:t-1, ancestor_indices[m]]
+                end
+            end
+            
+            # 新しい状態のサンプリング
             for m in 1:M
                 # 対数尺度で計算
                 log_weights = [logpdf(Normal(μ[k], σ[k]), x[t]) for k in 1:K]
-                log_weights .-= maximum(log_weights)  # 数値的安定性のため
+                log_weights .-= maximum(log_weights)
                 probs = exp.(log_weights)
                 probs ./= sum(probs)
                 
@@ -77,26 +86,23 @@ function particle_gibbs(x, K, N, M, n_iterations)
                 end
                 
                 # クラスタをサンプリング
-                particles[m, t] = rand(Categorical(probs))
+                particles[t, m] = rand(Categorical(probs))
             end
             
-            # 粒子の重みを計算（対数スケールで）
+            # 重みの更新
             log_weights = zeros(M)
             for m in 1:M
-                log_weights[m] = sum([logpdf(Normal(μ[particles[m,j]], σ[particles[m,j]]), x[j]) 
+                log_weights[m] = sum([logpdf(Normal(μ[particles[j,m]], σ[particles[j,m]]), x[j]) 
                                     for j in 1:t])
             end
-            # 数値的安定性のための正規化
             log_weights .-= maximum(log_weights)
             weights = exp.(log_weights)
             weights ./= sum(weights)
-            
-            # 1つの粒子を選択
-            selected_particle = rand(Categorical(weights))
-            z_samples[iter, t] = particles[selected_particle, t]
         end
         
-        # パラメータのサンプルを保存
+        # 最終的なサンプルを選択
+        selected_particle = rand(Categorical(weights))
+        z_samples[iter, :] = particles[:, selected_particle]
         μ_samples[iter, :] = μ
         σ_samples[iter, :] = σ
     end
