@@ -34,17 +34,22 @@ function particle_gibbs(x, K, N, M, n_iterations)
     σ = ones(K)
     
     for iter in 1:n_iterations
-        # パラメータのサンプリング
+        # μのサンプリング
         for k in 1:K
             cluster_points = x[z_samples[max(1,iter-1),:] .== k]
             if !isempty(cluster_points)
-                # μのサンプリング
                 n_k = length(cluster_points)
                 post_var = 1.0 / (1.0 + n_k/σ[k]^2)
                 post_mean = post_var * sum(cluster_points)/σ[k]^2
                 μ[k] = rand(Normal(post_mean, sqrt(post_var)))
-                
-                # σのサンプリング
+            end
+        end
+
+        # σのサンプリング
+        for k in 1:K
+            cluster_points = x[z_samples[max(1,iter-1),:] .== k]
+            if !isempty(cluster_points)
+                n_k = length(cluster_points)
                 α = 1.0 + n_k/2
                 β = 1.0 + sum((cluster_points .- μ[k]).^2)/2
                 σ[k] = sqrt(rand(InverseGamma(α, β)))
